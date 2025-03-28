@@ -1,8 +1,8 @@
-
 services:
-  astro-app:
-    build: .
+  ghost-blog:
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    volumes:
-      - ./:/app
+    restart: unless-stopped

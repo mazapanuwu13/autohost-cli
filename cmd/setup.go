@@ -40,6 +40,11 @@ y prepara túneles seguros para desplegar tus apps autohospedadas.`,
 			}
 		}
 
+		// Preguntar si se desea agregar permisos al usuario para Docker
+		if confirm("¿Deseas agregar tu usuario al grupo 'docker' para usar Docker sin sudo? [y/N]: ") {
+			addUserToDockerGroup()
+		}
+
 		// Elegir el tipo de túnel seguro
 		fmt.Println("🔒 ¿Qué tipo de acceso quieres configurar?")
 		fmt.Println("[1] Tailscale (privado)")
@@ -108,6 +113,31 @@ func installDocker() {
 	} else {
 		fmt.Println("✅ Docker instalado con éxito.")
 	}
+}
+
+// Añade al usuario actual al grupo 'docker' para no usar sudo
+func addUserToDockerGroup() {
+	// Intentar determinar el usuario real (si se usó sudo)
+	user := os.Getenv("SUDO_USER")
+	if user == "" {
+		// Si no se usó sudo, tomar la variable USER
+		user = os.Getenv("USER")
+	}
+	if user == "" {
+		fmt.Println("⚠️ No se pudo determinar el usuario para agregar al grupo 'docker'. Saltando este paso.")
+		return
+	}
+
+	fmt.Printf("👤 Agregando al usuario '%s' al grupo 'docker'...\n", user)
+	cmd := exec.Command("sh", "-c", fmt.Sprintf("sudo usermod -aG docker %s", user))
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Println("❌ Error al ejecutar usermod:", err)
+		return
+	}
+	fmt.Printf("✅ Usuario '%s' agregado al grupo 'docker'. ", user)
+	fmt.Println("Es posible que debas cerrar y volver a iniciar sesión para que surta efecto.")
 }
 
 // Instala Tailscale.
@@ -192,6 +222,11 @@ func saveConfig(cfg Config) error {
 		return err
 	}
 	defer file.Close()
+
+	_, err = file.Stat()
+	if err != nil {
+		return err
+	}
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
