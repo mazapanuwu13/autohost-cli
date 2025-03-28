@@ -49,13 +49,13 @@ Ejemplo: autohost deploy ghost-blog`,
 
 		// Ejecutar "docker-compose up -d" en el directorio de destino
 		fmt.Println("🔄 Iniciando docker-compose...")
-		cmdCompose := exec.Command("docker-compose", "up", "-d")
+		cmdCompose := exec.Command("docker", "compose", "up", "-d")
 		cmdCompose.Dir = targetDir
 		cmdCompose.Stdout = os.Stdout
 		cmdCompose.Stderr = os.Stderr
 		err = cmdCompose.Run()
 		if err != nil {
-			fmt.Println("❌ Error al ejecutar docker-compose:", err)
+			fmt.Println("❌ Error al ejecutar docker compose:", err)
 			return
 		}
 		fmt.Println("🚀 Servicio desplegado exitosamente en:", targetDir)
