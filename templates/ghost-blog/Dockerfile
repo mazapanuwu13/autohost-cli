@@ -1,5 +1,5 @@
 # Etapa 1: Construcción de la aplicación
-FROM node:16-alpine as builder
+FROM node:18.17.1-alpine as builder
 WORKDIR /app
 
 # Copiar archivos de definición e instalar dependencias
@@ -11,7 +11,7 @@ COPY . .
 RUN npm run build
 
 # Etapa 2: Servir la aplicación
-FROM node:16-alpine
+FROM node:18.17.1-alpine
 WORKDIR /app
 
 # Copiar los archivos construidos desde la etapa builder
@@ -21,4 +21,4 @@ COPY --from=builder /app ./
 EXPOSE 3000
 
 # Comando para iniciar la aplicación
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]
