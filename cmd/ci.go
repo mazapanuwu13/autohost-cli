@@ -13,15 +13,15 @@ import (
 // ciCmd es el comando principal para la configuración de CI/CD con GitHub Actions.
 var ciCmd = &cobra.Command{
 	Use:   "ci",
-	Short: "Configura un pipeline de GitHub Actions",
-	Long:  `Este comando te ayuda a automatizar la construcción y despliegue de tus proyectos mediante un workflow de GitHub Actions.`,
+	Short: "Configura un pipeline de GitHub Actions para despliegue local",
+	Long:  `Este comando te ayuda a automatizar la construcción y despliegue de tus proyectos en tu servidor en casa mediante un workflow self-hosted.`,
 }
 
-// ciInitCmd crea o actualiza el archivo de workflow en .github/workflows/autohost.yml.
+// ciInitCmd crea o actualiza el archivo de workflow en .github/workflows/deploy.yml.
 var ciInitCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Inicializa el workflow de GitHub Actions en .github/workflows/autohost.yml",
-	Long:  `Crea o actualiza el archivo de workflow para automatizar la build y el deploy de tu aplicación al hacer push a la rama main.`,
+	Short: "Inicializa el workflow de GitHub Actions en .github/workflows/deploy.yml",
+	Long:  `Crea o actualiza el archivo de workflow para automatizar el deploy usando un runner self-hosted en tu servidor local.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		setupGitHubActionsWorkflow()
 	},
@@ -36,39 +36,18 @@ func init() {
 func setupGitHubActionsWorkflow() {
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Println("Bienvenido al configurador de GitHub Actions para AutoHost CLI.")
-	fmt.Println("Este comando creará o actualizará el archivo .github/workflows/autohost.yml en tu repositorio.")
-	fmt.Println("Presiona Enter para omitir campos o usar valores por defecto.\n")
+	fmt.Println("Bienvenido al configurador de GitHub Actions para AutoHost CLI (Runner self-hosted).")
+	fmt.Println("Este comando creará o actualizará el archivo .github/workflows/deploy.yml en tu repositorio.")
+	fmt.Println("Presiona Enter para usar valores por defecto.\n")
 
-	fmt.Print("Nombre de la imagen Docker (ej: myuser/myapp:latest): ")
-	imageName, _ := reader.ReadString('\n')
-	imageName = strings.TrimSpace(imageName)
-	if imageName == "" {
-		imageName = "myuser/myapp:latest"
+	fmt.Print("Nombre de la rama que disparará el deploy (por defecto: main): ")
+	branch, _ := reader.ReadString('\n')
+	branch = strings.TrimSpace(branch)
+	if branch == "" {
+		branch = "main"
 	}
 
-	fmt.Print("Usuario SSH en el servidor (ej: ubuntu): ")
-	sshUser, _ := reader.ReadString('\n')
-	sshUser = strings.TrimSpace(sshUser)
-	if sshUser == "" {
-		sshUser = "ubuntu"
-	}
-
-	fmt.Print("Host o IP del servidor (ej: 123.45.67.89): ")
-	sshHost, _ := reader.ReadString('\n')
-	sshHost = strings.TrimSpace(sshHost)
-	if sshHost == "" {
-		sshHost = "123.45.67.89"
-	}
-
-	fmt.Print("Ruta en el servidor donde se ejecutará docker-compose (ej: /opt/myapp): ")
-	remotePath, _ := reader.ReadString('\n')
-	remotePath = strings.TrimSpace(remotePath)
-	if remotePath == "" {
-		remotePath = "/opt/myapp"
-	}
-
-	workflowContent := generateWorkflowContent(imageName, sshUser, sshHost, remotePath)
+	workflowContent := generateWorkflowContent(branch)
 
 	// Crear el directorio .github/workflows si no existe.
 	err := os.MkdirAll(".github/workflows", 0755)
@@ -77,8 +56,8 @@ func setupGitHubActionsWorkflow() {
 		return
 	}
 
-	// Crear o sobrescribir el archivo de workflow.
-	workflowFile := filepath.Join(".github", "workflows", "autohost.yml")
+	// Crear o sobrescribir el archivo de workflow (en este ejemplo lo llamamos deploy.yml).
+	workflowFile := filepath.Join(".github", "workflows", "deploy.yml")
 	file, err := os.Create(workflowFile)
 	if err != nil {
 		fmt.Println("❌ Error creando el archivo de workflow:", err)
@@ -93,46 +72,31 @@ func setupGitHubActionsWorkflow() {
 	}
 
 	fmt.Printf("✅ Archivo de workflow creado/actualizado: %s\n", workflowFile)
-	fmt.Println("Recuerda agregar tu clave privada SSH como secreto en GitHub (SSH_PRIVATE_KEY) para que funcione el deploy.")
-	fmt.Println("Más info: https://docs.github.com/en/actions/security-guides/encrypted-secrets")
+	fmt.Println("Recuerda configurar tu runner self-hosted en el servidor donde se ejecutará el deploy.")
 }
 
-// generateWorkflowContent genera el contenido del workflow de GitHub Actions basado en los parámetros proporcionados.
-func generateWorkflowContent(imageName, sshUser, sshHost, remotePath string) string {
-	return fmt.Sprintf(`name: AutoHost Deploy
+// generateWorkflowContent genera el contenido del workflow de GitHub Actions para un runner self-hosted.
+func generateWorkflowContent(branch string) string {
+	return fmt.Sprintf(`name: Deploy to Home Server
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "%s" ]
 
 jobs:
-  build-deploy:
-    runs-on: ubuntu-latest
+  deploy:
+    runs-on: self-hosted
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Stop existing container (if running)
+        run: |
+          docker compose down || true
 
-      - name: Build Docker image
+      - name: Build and start container
         run: |
-          docker build -t %s .
-      
-      - name: Push Docker image
-        run: |
-          echo "Skipping push to Docker registry if you don't have credentials"
-          # docker push %s
-
-      - name: Deploy to server
-        run: |
-          ssh -o StrictHostKeyChecking=no %s@%s << EOF
-            docker pull %s
-            cd %s
-            docker compose up -d
-          EOF
-`, imageName, imageName, sshUser, sshHost, imageName, remotePath)
+          docker compose up --build -d
+`, branch)
 }
