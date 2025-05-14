@@ -153,8 +153,20 @@ func installTailscale() {
 		fmt.Println("❌ Error al instalar Tailscale:", err)
 		os.Exit(1)
 	} else {
-		fmt.Println("✅ Tailscale instalado con éxito.")
-		fmt.Println("ℹ️ Ejecuta 'sudo tailscale up' para autenticarte con tu cuenta.")
+		// fmt.Println("✅ Tailscale instalado con éxito.")
+		// fmt.Println("ℹ️ Ejecuta 'sudo tailscale up' para autenticarte con tu cuenta.")
+		fmt.Println("🔐 Autenticándote con Tailscale...")
+		cmdLogin := exec.Command("sudo", "tailscale", "up")
+		cmdLogin.Stdout = os.Stdout
+		cmdLogin.Stderr = os.Stderr
+		err := cmdLogin.Run()
+		if err != nil {
+			fmt.Println("❌ Error al ejecutar 'tailscale up':", err)
+			fmt.Println("ℹ️ Puedes ejecutarlo manualmente con: sudo tailscale up")
+		} else {
+			fmt.Println("✅ Tailscale conectado correctamente.")
+		}
+
 	}
 }
 
