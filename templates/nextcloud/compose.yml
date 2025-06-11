@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  db:
+    image: mariadb:10.6
+    container_name: nextcloud_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nc_user
+      MYSQL_PASSWORD: nc_pass
+    volumes:
+      - db:/var/lib/mysql
+    networks:
+      - autohost_net
+
+  app:
+    image: nextcloud
+    container_name: nextcloud
+    restart: always
+    # ports:
+      # - "8080:80"
+    environment:
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nc_user
+      MYSQL_PASSWORD: nc_pass
+      MYSQL_HOST: db
+    depends_on:
+      - db
+    volumes:
+      - nextcloud:/var/www/html
+    networks:
+      - autohost_net
+
+volumes:
+  db:
+  nextcloud:
+
+networks:
+  autohost_net:
+    external: true

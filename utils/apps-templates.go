@@ -11,6 +11,16 @@ func InstallNextcloud() error {
 	compose := `version: '3.8'
 
 services:
+  caddy:
+    image: caddy 
+    container_name: caddy
+    ports:
+      - "80:80"
+    volumes:
+      - /root/.autohost/caddy/Caddyfile:/etc/caddy/Caddyfile
+    networks:
+      - autohost_net
+
   db:
     image: mariadb
     container_name: nextcloud_db
@@ -22,12 +32,12 @@ services:
       MYSQL_DATABASE: nextcloud
       MYSQL_USER: nc_user
       MYSQL_PASSWORD: nc_pass
+    networks:
+      - autohost_net
 
   app:
     image: nextcloud
     container_name: nextcloud_app
-    ports:
-      - "8080:80"
     volumes:
       - nextcloud:/var/www/html
     restart: always
@@ -36,10 +46,17 @@ services:
       MYSQL_DATABASE: nextcloud
       MYSQL_USER: nc_user
       MYSQL_HOST: db
+    networks:
+      - autohost_net
 
 volumes:
   db:
   nextcloud:
+
+networks:
+  autohost_net:
+    external: true
+
 `
 
 	path := filepath.Join(GetAutohostDir(), "docker", "compose", "nextcloud.yml")
