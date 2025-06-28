@@ -82,7 +82,7 @@ var caddyAddServiceCmd = &cobra.Command{
 	Use:   "add-service",
 	Short: "Agrega un nuevo servicio al archivo Caddyfile",
 	Run: func(cmd *cobra.Command, args []string) {
-		homeDir, _ := os.UserHomeDir()
+		homeDir := utils.GetAutohostDir()
 		caddyfilePath := filepath.Join(homeDir, ".autohost", "caddy", "Caddyfile")
 
 		block := fmt.Sprintf(`

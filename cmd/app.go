@@ -19,10 +19,10 @@ var appsInstallCmd = &cobra.Command{
 	Short: "Instala una aplicación (por ahora: nextcloud)",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if !utils.IsInitialized() {
-			fmt.Println("⚠️ Ejecuta `autohost init` primero.")
-			return
-		}
+		// if !utils.IsInitialized() {
+		// 	fmt.Println("⚠️ Ejecuta `autohost init` primero.")
+		// 	return
+		// }
 
 		app := args[0]
 

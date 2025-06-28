@@ -8,14 +8,16 @@ import (
 func GetAutohostDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		panic("No se pudo obtener el directorio HOME")
+		// Fallback muy simple, no recomendado para producción
+		return "./autohost"
 	}
-	return filepath.Join(home, ".autohost")
+	return filepath.Join(home, "go", "src", "github.com", "mazapanuwu13", "autohost-cli")
 }
 
 func EnsureAutohostDirs() error {
 	base := GetAutohostDir()
-	subdirs := []string{"docker/compose", "cloudflare", "logs", "templates", "state"}
+
+	subdirs := []string{"etc/autohost", "/opt/autohost/docker", "/opt/autohost/templates", "/var/lib/autohost/logs", "/var/lib/autohost/state"}
 
 	for _, sub := range subdirs {
 		if err := os.MkdirAll(filepath.Join(base, sub), 0755); err != nil {

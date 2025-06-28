@@ -1,6 +1,7 @@
 package apps
 
 import (
+	"autohost-cli/utils"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -39,14 +40,6 @@ func GetAppStatus(app string) (string, error) {
 
 // appComposePath devuelve la ruta al archivo docker-compose.yml de la app
 func appComposePath(app string) string {
-	return fmt.Sprintf("%s/.autohost/docker/compose/%s.yml", getHomeDir(), app)
-}
-
-// getHomeDir obtiene el directorio home del usuario
-func getHomeDir() string {
-	home, err := exec.Command("sh", "-c", "echo $HOME").Output()
-	if err != nil {
-		return "/root"
-	}
-	return strings.TrimSpace(string(home))
+	fmt.Println(app)
+	return fmt.Sprintf("%s/docker/compose/%s.yml", utils.GetAutohostDir(), app)
 }

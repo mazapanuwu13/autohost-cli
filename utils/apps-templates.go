@@ -2,65 +2,51 @@ package utils
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 )
 
 func InstallNextcloud() error {
-	compose := `version: '3.8'
+	// Obtener el directorio home del usuario
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("no se pudo obtener el directorio home del usuario: %w", err)
+	}
 
-services:
-  caddy:
-    image: caddy 
-    container_name: caddy
-    ports:
-      - "80:80"
-    volumes:
-      - /root/.autohost/caddy/Caddyfile:/etc/caddy/Caddyfile
-    networks:
-      - autohost_net
+	// Ruta fuente y destino construidas de forma segura
+	src := filepath.Join(homeDir, "go", "src", "github.com", "mazapanuwu13", "autohost-cli", "templates", "nextcloud", "compose.yml")
+	dest := filepath.Join(GetAutohostDir(), "docker", "compose", "nextcloud.yml")
 
-  db:
-    image: mariadb
-    container_name: nextcloud_db
-    restart: always
-    volumes:
-      - db:/var/lib/mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: example
-      MYSQL_DATABASE: nextcloud
-      MYSQL_USER: nc_user
-      MYSQL_PASSWORD: nc_pass
-    networks:
-      - autohost_net
+	// Asegúrate de que el directorio de destino exista
+	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+		return fmt.Errorf("error creando directorio de destino: %w", err)
+	}
 
-  app:
-    image: nextcloud
-    container_name: nextcloud_app
-    volumes:
-      - nextcloud:/var/www/html
-    restart: always
-    environment:
-      MYSQL_PASSWORD: nc_pass
-      MYSQL_DATABASE: nextcloud
-      MYSQL_USER: nc_user
-      MYSQL_HOST: db
-    networks:
-      - autohost_net
+	fmt.Println("Usando archivo fuente:", src)
 
-volumes:
-  db:
-  nextcloud:
+	// Abrir archivo fuente
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("error abriendo archivo fuente: %w", err)
+	}
+	defer srcFile.Close()
 
-networks:
-  autohost_net:
-    external: true
+	// Crear archivo destino
+	destFile, err := os.Create(dest)
+	if err != nil {
+		return fmt.Errorf("error creando archivo destino: %w", err)
+	}
+	defer destFile.Close()
 
-`
+	// Copiar contenido
+	if _, err := io.Copy(destFile, srcFile); err != nil {
+		return fmt.Errorf("error copiando contenido: %w", err)
+	}
 
-	path := filepath.Join(GetAutohostDir(), "docker", "compose", "nextcloud.yml")
-	return os.WriteFile(path, []byte(compose), 0644)
+	fmt.Println("✅ Nextcloud instalado correctamente.")
+	return nil
 }
 
 func StartApp(app string) error {
