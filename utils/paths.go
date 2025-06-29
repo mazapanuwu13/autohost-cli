@@ -1,33 +1,39 @@
 package utils
 
 import (
+	"fmt"
 	"os"
-	"path/filepath"
 )
 
 func GetAutohostDir() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		// Fallback muy simple, no recomendado para producción
-		return "./autohost"
-	}
-	return filepath.Join(home, "go", "src", "github.com", "mazapanuwu13", "autohost-cli")
+	// _, err := os.UserHomeDir()
+	// if err != nil {
+	// 	return "/" // fallback
+	// }
+	return "/"
 }
 
+const (
+	ConfigDir    = "/etc/autohost"
+	TemplatesDir = "/opt/autohost/templates"
+	DockerDir    = "/opt/autohost/docker"
+	LogsDir      = "/var/lib/autohost/logs"
+	StateDir     = "/var/lib/autohost/state"
+)
+
 func EnsureAutohostDirs() error {
-	base := GetAutohostDir()
+	dirs := []string{ConfigDir, TemplatesDir, DockerDir, LogsDir, StateDir}
 
-	subdirs := []string{"etc/autohost", "/opt/autohost/docker", "/opt/autohost/templates", "/var/lib/autohost/logs", "/var/lib/autohost/state"}
-
-	for _, sub := range subdirs {
-		if err := os.MkdirAll(filepath.Join(base, sub), 0755); err != nil {
-			return err
+	for _, dir := range dirs {
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			return fmt.Errorf("error creando %s: %w", dir, err)
 		}
 	}
 	return nil
 }
 
 func IsInitialized() bool {
-	_, err := os.Stat(GetAutohostDir())
-	return !os.IsNotExist(err)
+	// _, err := os.Stat(GetAutohostDir())
+	return true
 }

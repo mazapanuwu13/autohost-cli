@@ -19,12 +19,12 @@ var appsInstallCmd = &cobra.Command{
 	Short: "Instala una aplicación (por ahora: nextcloud)",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		// if !utils.IsInitialized() {
-		// 	fmt.Println("⚠️ Ejecuta `autohost init` primero.")
-		// 	return
-		// }
-
 		app := args[0]
+
+		if domain == "" {
+			fmt.Println("❌ Debes proporcionar un dominio usando --domain")
+			return
+		}
 
 		switch app {
 		case "nextcloud":
@@ -33,14 +33,22 @@ var appsInstallCmd = &cobra.Command{
 				fmt.Println("❌ Error al instalar Nextcloud:", err)
 				return
 			}
-			fmt.Println("✅ Nextcloud instalado. Revisa ~/.autohost/docker/compose/nextcloud.yml")
+			fmt.Println("✅ Nextcloud instalado.")
+
+			// 👉 Aquí generamos o modificamos el Caddyfile
+			err = utils.ConfigureCaddy("nextcloud", domain)
+			if err != nil {
+				fmt.Println("❌ Error al configurar Caddy:", err)
+				return
+			}
+			fmt.Println("✅ Caddy configurado para", domain)
 
 			if utils.Confirm("¿Deseas levantar la aplicación ahora con Docker? [y/N]: ") {
 				err := utils.StartApp("nextcloud")
 				if err != nil {
 					fmt.Println("❌ Error al iniciar Nextcloud:", err)
 				} else {
-					fmt.Println("🚀 Nextcloud está corriendo en http://localhost:8080")
+					fmt.Printf("🚀 Nextcloud corriendo en: https://%s\n", domain)
 				}
 			}
 
@@ -48,6 +56,10 @@ var appsInstallCmd = &cobra.Command{
 			fmt.Println("❌ Aplicación no soportada aún:", app)
 		}
 	},
+}
+
+func init() {
+	appsInstallCmd.Flags().StringVar(&domain, "domain", "", "Dominio para exponer la aplicación (ej: nextcloud.ts.net)")
 }
 
 var appsRunCmd = &cobra.Command{

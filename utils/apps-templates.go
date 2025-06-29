@@ -1,51 +1,37 @@
 package utils
 
 import (
+	"embed"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 )
 
+//go:embed templates/nextcloud/*
+var nextcloudFS embed.FS
+
 func InstallNextcloud() error {
-	// Obtener el directorio home del usuario
-	homeDir, err := os.UserHomeDir()
+	// Leer archivo embebido
+	data, err := nextcloudFS.ReadFile("templates/nextcloud/compose.yml")
 	if err != nil {
-		return fmt.Errorf("no se pudo obtener el directorio home del usuario: %w", err)
+		return fmt.Errorf("error leyendo plantilla embebida: %w", err)
 	}
 
-	// Ruta fuente y destino construidas de forma segura
-	src := filepath.Join(homeDir, "go", "src", "github.com", "mazapanuwu13", "autohost-cli", "templates", "nextcloud", "compose.yml")
-	dest := filepath.Join(GetAutohostDir(), "docker", "compose", "nextcloud.yml")
+	// Ruta de destino final
+	dest := filepath.Join(GetAutohostDir(), "opt", "autohost", "docker", "nextcloud.yml")
 
-	// Asegúrate de que el directorio de destino exista
+	// Crear el directorio si no existe
 	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-		return fmt.Errorf("error creando directorio de destino: %w", err)
+		return fmt.Errorf("error creando directorio destino: %w", err)
 	}
 
-	fmt.Println("Usando archivo fuente:", src)
-
-	// Abrir archivo fuente
-	srcFile, err := os.Open(src)
-	if err != nil {
-		return fmt.Errorf("error abriendo archivo fuente: %w", err)
-	}
-	defer srcFile.Close()
-
-	// Crear archivo destino
-	destFile, err := os.Create(dest)
-	if err != nil {
-		return fmt.Errorf("error creando archivo destino: %w", err)
-	}
-	defer destFile.Close()
-
-	// Copiar contenido
-	if _, err := io.Copy(destFile, srcFile); err != nil {
-		return fmt.Errorf("error copiando contenido: %w", err)
+	// Escribir el contenido del archivo embebido al destino
+	if err := os.WriteFile(dest, data, 0644); err != nil {
+		return fmt.Errorf("error escribiendo archivo destino: %w", err)
 	}
 
-	fmt.Println("✅ Nextcloud instalado correctamente.")
+	fmt.Println("✅ Nextcloud instalado correctamente en:", dest)
 	return nil
 }
 
