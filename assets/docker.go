@@ -11,8 +11,11 @@ var dockerFS embed.FS
 
 // ReadCompose lee assets/docker/<app>/docker-compose.yml
 func ReadCompose(app string) ([]byte, error) {
-	path := filepath.Join("docker", app, "docker-compose.yml")
-	return fs.ReadFile(dockerFS, path)
+	return fs.ReadFile(dockerFS, filepath.Join("docker", app, "docker-compose.yml"))
+}
+
+func ReadEnvExample(app string) ([]byte, error) {
+	return fs.ReadFile(dockerFS, filepath.Join("docker", app, ".env.example"))
 }
 
 // ListApps devuelve todas las apps que tienen plantilla
