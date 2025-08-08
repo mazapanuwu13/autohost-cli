@@ -18,7 +18,7 @@ var initCmd = &cobra.Command{
 			fmt.Println("❌ Error al crear estructura de carpetas:", err)
 			os.Exit(1)
 		}
-		fmt.Println("✅ Entorno de AutoHost creado en ~/.autohost")
+		fmt.Println("✅ Entorno de AutoHost creado")
 	},
 }
 
