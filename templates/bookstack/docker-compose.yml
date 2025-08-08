@@ -1,4 +1,4 @@
- services:
+services:
   bookstack_db:
     image: mariadb:10.6
     container_name: bookstack_db
@@ -14,11 +14,13 @@
   bookstack:
     image: lscr.io/linuxserver/bookstack:latest
     container_name: bookstack
+    depends_on:
+      - bookstack_db
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=America/Mexico_City
-      - APP_URL=http://100.112.92.90:6875
+      - APP_URL=http://localhost:6875
       - APP_KEY=example_app_key
       - DB_HOST=bookstack_db
       - DB_PORT=3306
