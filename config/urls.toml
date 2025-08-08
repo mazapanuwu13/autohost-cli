@@ -1,0 +1,12 @@
+[caddy]
+gpg_key = "https://dl.cloudsmith.io/public/caddy/stable/gpg.key"
+repo = "https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt"
+
+[tailscale]
+install_script = "https://tailscale.com/install.sh"
+
+[docker]
+install_script = "https://get.docker.com"
+
+[cloudflare]
+download_url = "https://developers.cloudflare.com/cloudflared/install/linux/"

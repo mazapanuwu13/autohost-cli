@@ -1,13 +1,11 @@
 package utils
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 )
 
 // Verifica si Docker está instalado
@@ -61,13 +59,4 @@ func SaveStatus(key string, value interface{}) error {
 	}
 
 	return os.WriteFile(path, data, 0644)
-}
-
-// Pide confirmación al usuario.
-func Confirm(prompt string) bool {
-	fmt.Print(prompt)
-	reader := bufio.NewReader(os.Stdin)
-	input, _ := reader.ReadString('\n')
-	input = strings.ToLower(strings.TrimSpace(input))
-	return input == "y" || input == "yes"
 }

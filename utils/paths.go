@@ -1,18 +1,9 @@
 package utils
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 )
-
-func GetAutohostDir() string {
-	// _, err := os.UserHomeDir()
-	// if err != nil {
-	// 	return "/" // fallback
-	// }
-	return "/"
-}
 
 const (
 	ConfigDir    = "/etc/autohost"
@@ -22,19 +13,17 @@ const (
 	StateDir     = "/var/lib/autohost/state"
 )
 
+func GetAutohostDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		// fallback razonable si falla
+		return "/tmp/autohost"
+	}
+	return filepath.Join(home, ".autohost")
+}
+
 func GetSubdir(subdir string) string {
 	return filepath.Join(GetAutohostDir(), subdir)
-}
-func EnsureAutohostDirs() error {
-	dirs := []string{ConfigDir, TemplatesDir, DockerDir, LogsDir, StateDir}
-
-	for _, dir := range dirs {
-		err := os.MkdirAll(dir, 0755)
-		if err != nil {
-			return fmt.Errorf("error creando %s: %w", dir, err)
-		}
-	}
-	return nil
 }
 
 func IsInitialized() bool {

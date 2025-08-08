@@ -25,7 +25,7 @@ var appInstallCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("✅ %s instalado correctamente. Revisa ~/autohost/docker/compose/%s.yml\n", appName, appName)
+		fmt.Printf("✅ %s instalado correctamente. Revisa ~/.autohost/docker/compose/%s.yml\n", appName, appName)
 
 		if utils.Confirm(fmt.Sprintf("¿Deseas levantar %s ahora con Docker? [y/N]: ", appName)) {
 			if err := app.StartApp(appName); err != nil {
