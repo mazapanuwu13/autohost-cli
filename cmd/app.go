@@ -3,121 +3,104 @@ package cmd
 import (
 	"fmt"
 
-	"autohost-cli/internal/apps"
+	"autohost-cli/internal/app"
 	"autohost-cli/utils"
 
 	"github.com/spf13/cobra"
 )
 
-var appsCmd = &cobra.Command{
+var appCmd = &cobra.Command{
 	Use:   "app",
 	Short: "Gestión de aplicaciones autohospedadas",
 }
 
-var appsInstallCmd = &cobra.Command{
+var appInstallCmd = &cobra.Command{
 	Use:   "install [nombre]",
-	Short: "Instala una aplicación (por ahora: nextcloud)",
+	Short: "Instala una aplicación (por ejemplo: nextcloud, bookstack, etc.)",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		// if !utils.IsInitialized() {
-		// 	fmt.Println("⚠️ Ejecuta `autohost init` primero.")
-		// 	return
-		// }
+	Run: utils.WithAppName(func(appName string) {
 
-		app := args[0]
-
-		switch app {
-		case "nextcloud":
-			err := utils.InstallNextcloud()
-			if err != nil {
-				fmt.Println("❌ Error al instalar Nextcloud:", err)
-				return
-			}
-			fmt.Println("✅ Nextcloud instalado. Revisa ~/.autohost/docker/compose/nextcloud.yml")
-
-			if utils.Confirm("¿Deseas levantar la aplicación ahora con Docker? [y/N]: ") {
-				err := utils.StartApp("nextcloud")
-				if err != nil {
-					fmt.Println("❌ Error al iniciar Nextcloud:", err)
-				} else {
-					fmt.Println("🚀 Nextcloud está corriendo en http://localhost:8080")
-				}
-			}
-
-		default:
-			fmt.Println("❌ Aplicación no soportada aún:", app)
+		if err := app.InstallApp(appName); err != nil {
+			fmt.Printf("❌ Error al instalar %s: %v\n", appName, err)
+			return
 		}
-	},
+
+		fmt.Printf("✅ %s instalado correctamente. Revisa ~/autohost/docker/compose/%s.yml\n", appName, appName)
+
+		if utils.Confirm(fmt.Sprintf("¿Deseas levantar %s ahora con Docker? [y/N]: ", appName)) {
+			if err := app.StartApp(appName); err != nil {
+				fmt.Printf("❌ Error al iniciar %s: %v\n", appName, err)
+			} else {
+				fmt.Printf("🚀 %s está corriendo en http://localhost:8080\n", appName)
+			}
+		}
+	}),
 }
 
-var appsRunCmd = &cobra.Command{
-	Use:   "run [nombre]",
+var appStartCmd = &cobra.Command{
+	Use:   "start [nombre]",
 	Short: "Inicia una aplicación",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		app := args[0]
-		err := utils.StartApp(app)
+	Run: utils.WithAppName(func(appName string) {
+		err := app.StartApp(appName)
 		if err != nil {
-			fmt.Printf("❌ No se pudo iniciar %s: %v\n", app, err)
+			fmt.Printf("❌ No se pudo iniciar %s: %v\n", appName, err)
 		} else {
-			fmt.Printf("🚀 %s iniciada correctamente.\n", app)
+			fmt.Printf("🚀 %s iniciada correctamente.\n", appName)
 		}
-	},
+	}),
 }
 
-var appsStopCmd = &cobra.Command{
+var appStopCmd = &cobra.Command{
 	Use:   "stop [nombre]",
 	Short: "Detiene una aplicación",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		app := args[0]
-		err := apps.StopApp(app)
+	Run: utils.WithAppName(func(appName string) {
+		err := app.StopApp(appName)
 
 		if err != nil {
-			fmt.Printf("❌ No se pudo detener %s: %v\n", app, err)
+			fmt.Printf("❌ No se pudo detener %s: %v\n", appName, err)
 		} else {
-			fmt.Printf("🛑 %s detenida.\n", app)
+			fmt.Printf("🛑 %s detenida.\n", appName)
 		}
-	},
+	}),
 }
 
-var appsRemoveCmd = &cobra.Command{
+var appRemoveCmd = &cobra.Command{
 	Use:   "remove [nombre]",
 	Short: "Elimina una aplicación",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		app := args[0]
-		if utils.Confirm(fmt.Sprintf("¿Estás seguro que quieres eliminar %s? [y/N]: ", app)) {
-			err := apps.RemoveApp(app)
+	Run: utils.WithAppName(func(appName string) {
+		if utils.Confirm(fmt.Sprintf("¿Estás seguro que quieres eliminar %s? [y/N]: ", appName)) {
+			err := app.RemoveApp(appName)
 			if err != nil {
-				fmt.Printf("❌ No se pudo eliminar %s: %v\n", app, err)
+				fmt.Printf("❌ No se pudo eliminar %s: %v\n", appName, err)
 			} else {
-				fmt.Printf("🧹 %s eliminada correctamente.\n", app)
+				fmt.Printf("🧹 %s eliminada correctamente.\n", appName)
 			}
 		}
-	},
+	}),
 }
 
-var appsStatusCmd = &cobra.Command{
+var appStatusCmd = &cobra.Command{
 	Use:   "status [nombre]",
 	Short: "Muestra el estado de una aplicación",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		app := args[0]
-		status, err := apps.GetAppStatus(app)
+	Run: utils.WithAppName(func(appName string) {
+		status, err := app.GetAppStatus(appName)
 		if err != nil {
-			fmt.Printf("❌ No se pudo obtener el estado de %s: %v\n", app, err)
+			fmt.Printf("❌ No se pudo obtener el estado de %s: %v\n", appName, err)
 		} else {
-			fmt.Printf("📊 Estado de %s: %s\n", app, status)
+			fmt.Printf("📊 Estado de %s: %s\n", appName, status)
 		}
-	},
+	}),
 }
 
 func init() {
-	appsCmd.AddCommand(appsInstallCmd)
-	appsCmd.AddCommand(appsRunCmd)
-	appsCmd.AddCommand(appsStopCmd)
-	appsCmd.AddCommand(appsRemoveCmd)
-	appsCmd.AddCommand(appsStatusCmd)
-	rootCmd.AddCommand(appsCmd)
+	appCmd.AddCommand(appInstallCmd)
+	appCmd.AddCommand(appStartCmd)
+	appCmd.AddCommand(appStopCmd)
+	appCmd.AddCommand(appRemoveCmd)
+	appCmd.AddCommand(appStatusCmd)
+	rootCmd.AddCommand(appCmd)
 }

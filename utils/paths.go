@@ -6,25 +6,18 @@ import (
 )
 
 func GetAutohostDir() string {
+	if custom := os.Getenv("AUTOHOST_DIR"); custom != "" {
+		return custom
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
-		// Fallback muy simple, no recomendado para producción
-		return "./autohost"
+		return "./.autohost"
 	}
-	return filepath.Join(home, "go", "src", "github.com", "mazapanuwu13", "autohost-cli")
+	return filepath.Join(home, ".autohost")
 }
 
-func EnsureAutohostDirs() error {
-	base := GetAutohostDir()
-
-	subdirs := []string{"etc/autohost", "/opt/autohost/docker", "/opt/autohost/templates", "/var/lib/autohost/logs", "/var/lib/autohost/state"}
-
-	for _, sub := range subdirs {
-		if err := os.MkdirAll(filepath.Join(base, sub), 0755); err != nil {
-			return err
-		}
-	}
-	return nil
+func GetSubdir(subdir string) string {
+	return filepath.Join(GetAutohostDir(), subdir)
 }
 
 func IsInitialized() bool {
