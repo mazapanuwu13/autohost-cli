@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 func GetAutohostDir() string {
@@ -21,6 +22,9 @@ const (
 	StateDir     = "/var/lib/autohost/state"
 )
 
+func GetSubdir(subdir string) string {
+	return filepath.Join(GetAutohostDir(), subdir)
+}
 func EnsureAutohostDirs() error {
 	dirs := []string{ConfigDir, TemplatesDir, DockerDir, LogsDir, StateDir}
 
