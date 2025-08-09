@@ -5,14 +5,12 @@ package main
 
 import (
 	"autohost-cli/cmd"
-	"autohost-cli/utils"
-	"log"
 )
 
 func main() {
-	err := utils.LoadURLsConfig("config/urls.toml")
-	if err != nil {
-		log.Fatalf("❌ No se pudo cargar config de URLs: %v", err)
-	}
+	// err := utils.LoadURLsConfig("config/urls.toml")
+	// if err != nil {
+	// 	log.Fatalf("❌ No se pudo cargar config de URLs: %v", err)
+	// }
 	cmd.Execute()
 }

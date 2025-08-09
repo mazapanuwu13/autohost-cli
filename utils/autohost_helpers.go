@@ -9,12 +9,22 @@ import (
 	"strings"
 )
 
-func Exec(cmdName string, args ...string) error {
-	cmd := exec.Command(cmdName, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+func Exec(cmd string, args ...string) error {
+	c := exec.Command(cmd, args...)
+	c.Stdout, c.Stderr = os.Stdout, os.Stderr
+	return c.Run()
 }
+func ExecShell(script string) error {
+	// bash con -e (stop on error) y -o pipefail
+	return Exec("bash", "-eo", "pipefail", "-c", script)
+}
+
+// func Exec(cmdName string, args ...string) error {
+// 	cmd := exec.Command(cmdName, args...)
+// 	cmd.Stdout = os.Stdout
+// 	cmd.Stderr = os.Stderr
+// 	return cmd.Run()
+// }
 
 func ExecWithDir(dir string, cmdName string, args ...string) error {
 	cmd := exec.Command(cmdName, args...)
@@ -24,15 +34,15 @@ func ExecWithDir(dir string, cmdName string, args ...string) error {
 	return cmd.Run()
 }
 
-func ExecShell(command string) {
-	cmd := exec.Command("sh", "-c", command)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		fmt.Println("❌ Error ejecutando comando:", err)
-		os.Exit(1)
-	}
-}
+// func ExecShell(command string) {
+// 	cmd := exec.Command("sh", "-c", command)
+// 	cmd.Stdout = os.Stdout
+// 	cmd.Stderr = os.Stderr
+// 	if err := cmd.Run(); err != nil {
+// 		fmt.Println("❌ Error ejecutando comando:", err)
+// 		os.Exit(1)
+// 	}
+// }
 
 func Confirm(prompt string) bool {
 	fmt.Print(prompt)

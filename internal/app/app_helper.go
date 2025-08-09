@@ -3,6 +3,7 @@ package app
 import (
 	"autohost-cli/assets"
 	"autohost-cli/utils"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,25 +12,25 @@ import (
 )
 
 func InstallApp(app string) error {
-	destDir := filepath.Join(utils.GetSubdir("apps"), app)
-	dest := filepath.Join(destDir, "docker-compose.yml")
+	appDir := filepath.Join(utils.GetSubdir("apps"), app)
+	composePath := filepath.Join(appDir, "docker-compose.yml")
+	envPath := filepath.Join(appDir, ".env")
 
-	// Crear el directorio destino si no existe
-	if err := os.MkdirAll(destDir, 0o755); err != nil {
+	// Crear el directorio destino
+	if err := os.MkdirAll(appDir, 0o755); err != nil {
 		return fmt.Errorf("error creando directorio de destino: %w", err)
 	}
 
-	// 1) Leer desde embed
-	data, err := assets.ReadCompose(app) // lee assets/docker/<app>/docker-compose.yml
+	// === 1) Compose: embebido con fallback opcional ===
+	data, err := assets.ReadCompose(app) // assets/docker/<app>/docker-compose.yml
 	if err != nil {
-		// 2) Fallback opcional a plantilla personalizada del usuario
+		// Fallback: plantilla personalizada del usuario (opcional)
 		custom := filepath.Join(utils.GetSubdir("templates"), app, "docker-compose.yml")
 		if b, e := os.ReadFile(custom); e == nil {
 			data = b
-			err = nil
 			fmt.Println("ℹ️  Usando plantilla personalizada:", custom)
 		} else {
-			if !errorsIsNotExist(e) { // helper pequeño para distinguir
+			if !errors.Is(e, os.ErrNotExist) {
 				return fmt.Errorf("error leyendo plantilla personalizada %s: %w", custom, e)
 			}
 			return fmt.Errorf("no se encontró plantilla embebida para %s (%v) ni personalizada en %s", app, err, custom)
@@ -38,17 +39,51 @@ func InstallApp(app string) error {
 		fmt.Println("📦 Usando plantilla embebida para:", app)
 	}
 
-	// Escribir compose
-	if err := os.WriteFile(dest, data, 0o644); err != nil {
-		return fmt.Errorf("error escribiendo archivo destino: %w", err)
+	if err := os.WriteFile(composePath, data, 0o644); err != nil {
+		return fmt.Errorf("error escribiendo docker-compose.yml: %w", err)
 	}
 
-	fmt.Printf("✅ %s instalado correctamente en %s\n", app, dest)
-	return nil
-}
+	// === 2) .env: crear desde .env.example si no existe ===
+	if _, err := os.Stat(envPath); errors.Is(err, os.ErrNotExist) {
+		// Intentar leer .env.example embebido
+		if example, e := assets.ReadEnvExample(app); e == nil {
+			values := map[string]string{}
 
-func errorsIsNotExist(err error) bool {
-	return err != nil
+			// Genera APP_KEY solo si el ejemplo lo pide
+			if strings.Contains(string(example), "{{APP_KEY}}") {
+				if key, genErr := utils.GenerateLaravelAppKey(); genErr == nil {
+					values["APP_KEY"] = key
+				} else {
+					return fmt.Errorf("no se pudo generar APP_KEY: %w", genErr)
+				}
+			}
+
+			// Si quieres agregar más placeholders globales, hazlo aquí:
+			// p.ej. PUERTOS ALEATORIOS, PASSWORDS, ETC.
+			// if strings.Contains(string(example), "{{MYSQL_PASSWORD}}") {
+			//     values["MYSQL_PASSWORD"] = utils.GeneratePassword(20)
+			// }
+
+			final := utils.ReplacePlaceholders(string(example), values)
+			if writeErr := os.WriteFile(envPath, []byte(final), 0o600); writeErr != nil {
+				return fmt.Errorf("error escribiendo .env: %w", writeErr)
+			}
+			fmt.Println("✅ .env generado desde .env.example")
+		} else if errors.Is(e, os.ErrNotExist) {
+			// Si la app no trae .env.example, crea uno vacío
+			if writeErr := os.WriteFile(envPath, []byte("# .env generado por autohost\n"), 0o600); writeErr != nil {
+				return fmt.Errorf("error creando .env vacío: %w", writeErr)
+			}
+			fmt.Println("ℹ️  Sin .env.example embebido; se creó .env vacío.")
+		} else {
+			return fmt.Errorf("error leyendo .env.example embebido: %w", e)
+		}
+	} else {
+		fmt.Println("ℹ️  .env ya existe; no se sobrescribe.")
+	}
+
+	fmt.Printf("✅ %s instalado correctamente en %s\n", app, appDir)
+	return nil
 }
 
 // StartApp ejecuta docker compose up -d para una app

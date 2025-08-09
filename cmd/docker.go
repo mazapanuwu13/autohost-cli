@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"autohost-cli/internal/docker"
 	"autohost-cli/utils"
 
 	"github.com/spf13/cobra"
@@ -22,24 +23,24 @@ var dockerInstallCmd = &cobra.Command{
 			return
 		}
 
-		if utils.DockerInstalled() {
+		if docker.DockerInstalled() {
 			fmt.Println("✅ Docker ya está instalado.")
 		} else {
 			fmt.Println("🔧 Instalando Docker...")
-			utils.InstallDocker()
+			docker.InstallDocker()
 		}
 
 		if utils.Confirm("¿Agregar usuario al grupo docker? [y/N]: ") {
-			utils.AddUserToDockerGroup()
+			docker.AddUserToDockerGroup()
 		}
 
 		// Guardar estado
-		err := utils.SaveStatus("docker_installed", true)
-		if err != nil {
-			fmt.Println("⚠️ No se pudo guardar el estado:", err)
-		} else {
-			fmt.Println("📝 Estado de Docker guardado en ~/.autohost/state/status.json")
-		}
+		// err := docker.SaveStatus("docker_installed", true)
+		// if err != nil {
+		// 	fmt.Println("⚠️ No se pudo guardar el estado:", err)
+		// } else {
+		// 	fmt.Println("📝 Estado de Docker guardado en ~/.autohost/state/status.json")
+		// }
 	},
 }
 
