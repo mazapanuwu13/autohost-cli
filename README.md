@@ -30,7 +30,7 @@ curl -fsSL https://autohost.dev/install.sh | bash
 ```bash
 autohost init
 ```
-### Instalar una aplicación
+### Configuracion inicial
 ```bash
 autohost setup
 ```
