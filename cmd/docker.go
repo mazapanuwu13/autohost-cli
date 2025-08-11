@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"autohost-cli/internal/docker"
+	"autohost-cli/internal/helpers/docker"
 	"autohost-cli/utils"
 
 	"github.com/spf13/cobra"

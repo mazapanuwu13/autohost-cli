@@ -119,8 +119,8 @@ var cloudflareTunnelCmd = &cobra.Command{
 			fmt.Println("⚠️ Error al guardar config:", err)
 		}
 
-		utils.SaveStatus("cloudflare_tunnel", true)
-		utils.SaveStatus("cloudflare_domain", domain)
+		// utils.SaveStatus("cloudflare_tunnel", true)
+		// utils.SaveStatus("cloudflare_domain", domain)
 	},
 }
 

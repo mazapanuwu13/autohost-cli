@@ -2,7 +2,7 @@
 package cmd
 
 import (
-	"autohost-cli/internal/initializer"
+	"autohost-cli/internal/helpers/initializer"
 	"fmt"
 	"os"
 

@@ -1,10 +1,9 @@
 package cmd
 
 import (
-	"fmt"
-
-	"autohost-cli/internal/app"
+	"autohost-cli/internal/helpers/app"
 	"autohost-cli/utils"
+	"fmt"
 
 	"github.com/spf13/cobra"
 )

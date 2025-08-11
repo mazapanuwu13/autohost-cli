@@ -1,11 +1,11 @@
 package cmd
 
 import (
-	"autohost-cli/internal/caddy"
-	"autohost-cli/internal/cloudflared"
-	"autohost-cli/internal/docker"
-	"autohost-cli/internal/initializer"
-	"autohost-cli/internal/tailscale"
+	"autohost-cli/internal/helpers/caddy"
+	"autohost-cli/internal/helpers/cloudflared"
+	"autohost-cli/internal/helpers/docker"
+	"autohost-cli/internal/helpers/initializer"
+	"autohost-cli/internal/helpers/tailscale"
 	"autohost-cli/utils"
 	"bufio"
 	"fmt"

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"autohost-cli/internal/helpers/docker"
 	"autohost-cli/utils"
 
 	"github.com/spf13/cobra"
@@ -23,7 +24,7 @@ var statusCmd = &cobra.Command{
 		fmt.Println("📦 Estado del sistema AutoHost\n")
 
 		// Estado de Docker
-		if utils.DockerInstalled() {
+		if docker.DockerInstalled() {
 			fmt.Println("✅ Docker instalado")
 		} else {
 			fmt.Println("❌ Docker no está disponible")
