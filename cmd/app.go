@@ -30,7 +30,8 @@ var appInstallCmd = &cobra.Command{
 			if err := app.StartApp(appName); err != nil {
 				fmt.Printf("❌ Error al iniciar %s: %v\n", appName, err)
 			} else {
-				fmt.Printf("🚀 %s está corriendo en http://localhost:8080\n", appName)
+				portInfo := app.DetectAppPorts(appName)
+				fmt.Printf("🚀 %s %s\n", appName, portInfo.Message)
 			}
 		}
 	}),
@@ -45,7 +46,8 @@ var appStartCmd = &cobra.Command{
 		if err != nil {
 			fmt.Printf("❌ No se pudo iniciar %s: %v\n", appName, err)
 		} else {
-			fmt.Printf("🚀 %s iniciada correctamente.\n", appName)
+			portInfo := app.DetectAppPorts(appName)
+			fmt.Printf("🚀 %s iniciada correctamente, %s\n", appName, portInfo.Message)
 		}
 	}),
 }

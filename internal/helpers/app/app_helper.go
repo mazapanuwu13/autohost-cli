@@ -3,13 +3,34 @@ package app
 import (
 	"autohost-cli/assets"
 	"autohost-cli/utils"
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
+
+// ComposeService representa un servicio en docker-compose.yml
+type ComposeService struct {
+	Ports []string `yaml:"ports"`
+}
+
+// ComposeFile representa la estructura básica de un docker-compose.yml
+type ComposeFile struct {
+	Services map[string]ComposeService `yaml:"services"`
+}
+
+// PortInfo contiene información sobre los puertos detectados
+type PortInfo struct {
+	HostPorts []string
+	Message   string
+}
 
 func InstallApp(app string) error {
 	appDir := filepath.Join(utils.GetSubdir("apps"), app)
@@ -139,3 +160,125 @@ func appComposePath(app string) string {
 // 	_, err := os.Stat(path)
 // 	return err == nil
 // }
+
+// DetectAppPorts analiza el docker-compose.yml y .env para detectar puertos
+func DetectAppPorts(app string) PortInfo {
+	appDir := filepath.Join(utils.GetSubdir("apps"), app)
+	composePath := filepath.Join(appDir, "docker-compose.yml")
+	envPath := filepath.Join(appDir, ".env")
+
+	// Leer archivo docker-compose.yml
+	composeData, err := os.ReadFile(composePath)
+	if err != nil {
+		return PortInfo{Message: "No se pudo leer docker-compose.yml"}
+	}
+
+	// Leer variables de entorno del .env
+	envVars := make(map[string]string)
+	if envData, err := os.ReadFile(envPath); err == nil {
+		envVars = parseEnvFile(string(envData))
+	}
+
+	// Parsear docker-compose.yml
+	var compose ComposeFile
+	if err := yaml.Unmarshal(composeData, &compose); err != nil {
+		return PortInfo{Message: "No se pudo parsear docker-compose.yml"}
+	}
+
+	var hostPorts []string
+	for serviceName, service := range compose.Services {
+		for _, portMapping := range service.Ports {
+			if hostPort := extractHostPort(portMapping, envVars); hostPort != "" {
+				hostPorts = append(hostPorts, hostPort)
+			}
+		}
+		_ = serviceName // Avoid unused variable warning if needed
+	}
+
+	if len(hostPorts) == 0 {
+		return PortInfo{Message: "Sin puertos externos configurados"}
+	}
+
+	// Generar mensaje con los puertos encontrados
+	if len(hostPorts) == 1 {
+		return PortInfo{
+			HostPorts: hostPorts,
+			Message:   fmt.Sprintf("corriendo en http://localhost:%s", hostPorts[0]),
+		}
+	} else {
+		return PortInfo{
+			HostPorts: hostPorts,
+			Message:   fmt.Sprintf("corriendo en puertos: %s", strings.Join(hostPorts, ", ")),
+		}
+	}
+}
+
+// parseEnvFile analiza un archivo .env y devuelve un map de variables
+func parseEnvFile(content string) map[string]string {
+	vars := make(map[string]string)
+	scanner := bufio.NewScanner(strings.NewReader(content))
+	
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		
+		if parts := strings.SplitN(line, "=", 2); len(parts) == 2 {
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			vars[key] = value
+		}
+	}
+	
+	return vars
+}
+
+// extractHostPort extrae el puerto del host de un mapeo de puertos como "8080:80" o "${PORT}:80"
+func extractHostPort(portMapping string, envVars map[string]string) string {
+	// Resolver variables de entorno en el mapeo de puertos
+	resolved := resolveEnvVars(portMapping, envVars)
+	
+	// Extraer puerto del host de mapeos como "8080:80" o "127.0.0.1:8080:80"
+	parts := strings.Split(resolved, ":")
+	if len(parts) >= 2 {
+		// Si tiene formato IP:HOST_PORT:CONTAINER_PORT, tomar el del medio
+		if len(parts) == 3 {
+			return parts[1]
+		}
+		// Si tiene formato HOST_PORT:CONTAINER_PORT, tomar el primero
+		if port := strings.TrimSpace(parts[0]); isValidPort(port) {
+			return port
+		}
+	}
+	
+	return ""
+}
+
+// resolveEnvVars resuelve variables como ${VAR} o $VAR en una cadena
+func resolveEnvVars(text string, envVars map[string]string) string {
+	// Patrón para ${VAR} y $VAR
+	re := regexp.MustCompile(`\$\{([^}]+)\}|\$([A-Z_][A-Z0-9_]*)`)
+	
+	return re.ReplaceAllStringFunc(text, func(match string) string {
+		var varName string
+		if strings.HasPrefix(match, "${") {
+			varName = match[2 : len(match)-1] // Remover ${ y }
+		} else {
+			varName = match[1:] // Remover $
+		}
+		
+		if value, exists := envVars[varName]; exists {
+			return value
+		}
+		return match // Retornar sin cambios si no se encuentra la variable
+	})
+}
+
+// isValidPort verifica si una cadena representa un puerto válido
+func isValidPort(s string) bool {
+	if port, err := strconv.Atoi(s); err == nil {
+		return port > 0 && port <= 65535
+	}
+	return false
+}
