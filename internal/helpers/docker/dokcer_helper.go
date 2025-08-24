@@ -57,17 +57,17 @@ func ensureCurl() error {
 
 	switch {
 	case strings.Contains(id, "debian") || strings.Contains(id, "ubuntu"):
-		return utils.ExecShell(`apt-get update -y && apt-get install -y curl ca-certificates && update-ca-certificates`)
+		return utils.ExecShell(`sudo apt-get update -y && sudo apt-get install -y curl ca-certificates && sudo update-ca-certificates`)
 	case strings.Contains(id, "rhel") || strings.Contains(id, "centos") || strings.Contains(id, "rocky") || strings.Contains(id, "almalinux"):
-		return utils.ExecShell(`yum install -y curl ca-certificates || dnf install -y curl ca-certificates`)
+		return utils.ExecShell(`sudo yum install -y curl ca-certificates || sudo dnf install -y curl ca-certificates`)
 	case strings.Contains(id, "fedora"):
-		return utils.ExecShell(`dnf install -y curl ca-certificates`)
+		return utils.ExecShell(`sudo dnf install -y curl ca-certificates`)
 	case strings.Contains(id, "amzn"): // Amazon Linux
-		return utils.ExecShell(`yum install -y curl ca-certificates || dnf install -y curl ca-certificates`)
+		return utils.ExecShell(`sudo yum install -y curl ca-certificates || sudo dnf install -y curl ca-certificates`)
 	case strings.Contains(id, "alpine"):
-		return utils.ExecShell(`apk add --no-cache curl ca-certificates && update-ca-certificates`)
+		return utils.ExecShell(`sudo apk add --no-cache curl ca-certificates && sudo update-ca-certificates`)
 	case strings.Contains(id, "suse") || strings.Contains(id, "sles") || strings.Contains(id, "opensuse"):
-		return utils.ExecShell(`zypper --non-interactive install -y curl ca-certificates`)
+		return utils.ExecShell(`sudo zypper --non-interactive install -y curl ca-certificates`)
 	default:
 		// mejor intentar y que falle claro
 		return utils.Exec("which", "curl")
@@ -105,10 +105,10 @@ rm -f "$tmp"
 
 	// Arrancar/enable del daemon (si hay systemd)
 	if systemctlAvailable() {
-		_ = utils.Exec("systemctl", "enable", "--now", "docker")
+		_ = utils.Exec("sudo", "systemctl", "enable", "--now", "docker")
 	} else {
 		// fallback best-effort
-		_ = utils.Exec("service", "docker", "start")
+		_ = utils.Exec("sudo", "service", "docker", "start")
 	}
 
 	// Verificar CLI + daemon
@@ -143,10 +143,10 @@ func AddUserToDockerGroup() {
 	}
 
 	// Crea grupo si falta y agrega usuario
-	if err := utils.ExecShell(`getent group docker >/dev/null 2>&1 || groupadd docker`); err != nil {
+	if err := utils.ExecShell(`getent group docker >/dev/null 2>&1 || sudo groupadd docker`); err != nil {
 		fmt.Println("⚠️  No pude crear/verificar grupo docker:", err)
 	}
-	if err := utils.Exec("usermod", "-aG", "docker", u); err != nil {
+	if err := utils.Exec("sudo", "usermod", "-aG", "docker", u); err != nil {
 		fmt.Printf("⚠️  No pude agregar el usuario '%s' al grupo docker: %v\n", u, err)
 		return
 	}
