@@ -217,20 +217,20 @@ func DetectAppPorts(app string) PortInfo {
 func parseEnvFile(content string) map[string]string {
 	vars := make(map[string]string)
 	scanner := bufio.NewScanner(strings.NewReader(content))
-	
+
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		
+
 		if parts := strings.SplitN(line, "=", 2); len(parts) == 2 {
 			key := strings.TrimSpace(parts[0])
 			value := strings.TrimSpace(parts[1])
 			vars[key] = value
 		}
 	}
-	
+
 	return vars
 }
 
@@ -238,7 +238,7 @@ func parseEnvFile(content string) map[string]string {
 func extractHostPort(portMapping string, envVars map[string]string) string {
 	// Resolver variables de entorno en el mapeo de puertos
 	resolved := resolveEnvVars(portMapping, envVars)
-	
+
 	// Extraer puerto del host de mapeos como "8080:80" o "127.0.0.1:8080:80"
 	parts := strings.Split(resolved, ":")
 	if len(parts) >= 2 {
@@ -251,7 +251,7 @@ func extractHostPort(portMapping string, envVars map[string]string) string {
 			return port
 		}
 	}
-	
+
 	return ""
 }
 
@@ -259,7 +259,7 @@ func extractHostPort(portMapping string, envVars map[string]string) string {
 func resolveEnvVars(text string, envVars map[string]string) string {
 	// Patrón para ${VAR} y $VAR
 	re := regexp.MustCompile(`\$\{([^}]+)\}|\$([A-Z_][A-Z0-9_]*)`)
-	
+
 	return re.ReplaceAllStringFunc(text, func(match string) string {
 		var varName string
 		if strings.HasPrefix(match, "${") {
@@ -267,7 +267,7 @@ func resolveEnvVars(text string, envVars map[string]string) string {
 		} else {
 			varName = match[1:] // Remover $
 		}
-		
+
 		if value, exists := envVars[varName]; exists {
 			return value
 		}
