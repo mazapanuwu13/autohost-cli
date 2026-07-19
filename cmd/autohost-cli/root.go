@@ -13,6 +13,7 @@ import (
 	"autohost-cli/internal/adapters/installed"
 	"autohost-cli/internal/adapters/tailscale"
 	appSvc "autohost-cli/internal/app"
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -25,10 +26,38 @@ var (
 	Date    = "unknown"
 )
 
+const banner = `
+    █████╗ ██╗   ██╗████████╗██████╗ ██╗  ██╗██████╗ ███████╗████████╗       ██████╗ ██╗     ██╗
+    ██╔══██╗██║   ██║╚══██╔══╝██╔══██╗██║  ██║██╔══██╗██╔════╝╚══██╔══╝      ██╔════╝ ██║     ██║
+    ███████║██║   ██║   ██║   ██║  ██║███████║██║  ██║███████╗   ██║   █████╗██║      ██║     ██║
+    ██╔══██║██║   ██║   ██║   ██║  ██║██╔══██║██║  ██║╚════██║   ██║   ╚════╝██║      ██║     ██║
+    ██║  ██║╚██████╔╝   ██║   ██████╔╝██║  ██║██████╔╝███████║   ██║         ╚██████╗ ███████╗██║
+    ╚═╝  ╚═╝ ╚═════╝    ╚═╝   ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝   ╚═╝          ╚═════╝ ╚══════╝╚═╝
+`
+
+// ANSI color codes
+const (
+	colorCyan  = "\033[36m"
+	colorGray  = "\033[90m"
+	colorWhite = "\033[97m"
+	colorReset = "\033[0m"
+)
+
+func printBanner() {
+	fmt.Print(colorCyan + banner + colorReset)
+	fmt.Printf("    %sv%s%s  %s• %s • %s\n", colorWhite, Version, colorReset, colorGray, Date, colorReset)
+	fmt.Printf("    %sCLI para autohosting con Docker/Tailscale/Cloudflare/Caddy%s\n\n", colorGray, colorReset)
+	fmt.Printf("    Usa %sautohost --help%s para ver los comandos disponibles.\n\n", colorWhite, colorReset)
+}
+
 var rootCmd = &cobra.Command{
 	Use:     "autohost",
 	Short:   "CLI para autohosting con Docker/Tailscale/Cloudflare/Caddy",
 	Version: Version,
+	Run: func(cmd *cobra.Command, args []string) {
+		printBanner()
+		cmd.Usage()
+	},
 }
 
 func Execute() {
