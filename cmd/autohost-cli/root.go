@@ -8,6 +8,7 @@ import (
 	"autohost-cli/cmd/autohost-cli/install"
 	"autohost-cli/cmd/autohost-cli/setup"
 	"autohost-cli/cmd/autohost-cli/up"
+	"autohost-cli/cmd/autohost-cli/vpn"
 	"autohost-cli/internal/adapters/catalog"
 	"autohost-cli/internal/adapters/docker"
 	"autohost-cli/internal/adapters/installed"
@@ -85,6 +86,9 @@ func init() {
 	rootCmd.AddCommand(install.InstallCmd(appService))
 	rootCmd.AddCommand(setup.SetupCmd(&appSvc.SetupService{
 		Docker:    dockerAdapter,
+		Tailscale: tailscale.New(),
+	}))
+	rootCmd.AddCommand(vpn.VPNCmd(&appSvc.VPNService{
 		Tailscale: tailscale.New(),
 	}))
 }
