@@ -61,8 +61,13 @@ func (s *VPNService) Logout() error {
 
 func (s *VPNService) notifyVPNStatus(ipVPN string) {
 	cfg, err := agentconfig.Load()
-	if err != nil || cfg.ApiURL == "" || cfg.ApiToken == "" {
-		return // Sin configuración de agente o sin token
+	if err != nil {
+		fmt.Printf("⚠️ No se pudo cargar /etc/autohost/config.yaml: %v\n", err)
+		return
+	}
+	if cfg.ApiURL == "" || cfg.ApiToken == "" {
+		fmt.Println("⚠️ Configuración del agente sin token o URL de API.")
+		return
 	}
 
 	payload := map[string]string{"ip_vpn": ipVPN}
@@ -71,6 +76,7 @@ func (s *VPNService) notifyVPNStatus(ipVPN string) {
 	reqURL := fmt.Sprintf("%s/v1/vpn/status", strings.TrimRight(cfg.ApiURL, "/"))
 	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(body))
 	if err != nil {
+		fmt.Printf("⚠️ Error al construir petición de estado VPN: %v\n", err)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -79,6 +85,7 @@ func (s *VPNService) notifyVPNStatus(ipVPN string) {
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
+		fmt.Printf("⚠️ Error de conexión al notificar la IP VPN a %s: %v\n", reqURL, err)
 		return
 	}
 	defer resp.Body.Close()
@@ -89,5 +96,7 @@ func (s *VPNService) notifyVPNStatus(ipVPN string) {
 		} else {
 			fmt.Println("✅ IP Privada desregistrada de Autohost.")
 		}
+	} else {
+		fmt.Printf("⚠️ Error de la API (%d) al registrar la IP VPN en Autohost.\n", resp.StatusCode)
 	}
 }

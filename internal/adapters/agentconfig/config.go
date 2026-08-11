@@ -28,7 +28,11 @@ const configPath = "/etc/autohost/config.yaml"
 func Load() (*AgentConfig, error) {
 	content, err := os.ReadFile(configPath)
 	if err != nil {
-		return nil, fmt.Errorf("no se pudo leer %s: %w", configPath, err)
+		if out, sudoErr := exec.Command("sudo", "cat", configPath).Output(); sudoErr == nil && len(out) > 0 {
+			content = out
+		} else {
+			return nil, fmt.Errorf("no se pudo leer %s: %w", configPath, err)
+		}
 	}
 	var raw struct {
 		APIURL     string `yaml:"api_url"`
